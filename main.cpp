@@ -1,5 +1,10 @@
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+#include <chrono>
+
 using namespace std;
 
 const int MAX_NODOS = 100;
@@ -59,7 +64,7 @@ void reconstruirCamino(Nodo* actual) {
     }
 }
 
-void AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, int columnas, int mapa[5][5]) {
+bool AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, int columnas, int mapa[5][5]) {
     Nodo nodoInicio(inicioX, inicioY);
     Nodo nodoObjetivo(objetivoX, objetivoY);
 
@@ -76,7 +81,7 @@ void AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, in
 
         if (actual->x == nodoObjetivo.x && actual->y == nodoObjetivo.y) {
             reconstruirCamino(actual);
-            return;
+            return true;
         }
 
         for (int i = 0; i < tamAbierta; i++) {
@@ -105,7 +110,7 @@ void AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, in
                 continue;
             }
 
-            if (mapa[vecino->x][vecino->y] == 1) {
+            if (mapa[vecino->x][vecino->y] == 2) {
                 continue;
             }
 
@@ -113,7 +118,7 @@ void AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, in
                 continue;
             }
 
-            vecino->g = actual->g + 1;
+            vecino->g = actual->g + mapa[vecino->x][vecino->y];
             vecino->h = heuristica(vecino, &nodoObjetivo);
             vecino->f = vecino->g + vecino->h;
             vecino->padre = actual;
@@ -132,21 +137,56 @@ void AStar(int inicioX, int inicioY, int objetivoX, int objetivoY, int filas, in
     }
 
     cout << "No se encontró un camino.\n";
+    return false;
+}
+
+void simularTrafico(int filas, int columnas, int mapa[5][5]) {
+    for (int i = 0; i < filas; i++) {
+        for (int j = 0; j < columnas; j++) {
+            if (mapa[i][j] == 1) {
+                int cambio = rand() % 3 - 1;
+                mapa[i][j] = max(1, mapa[i][j] + cambio);
+            }
+        }
+    }
+}
+
+void mostrarMapa(int filas, int columnas, int mapa[5][5]) {
+    cout << "Mapa actualizado:\n";
+    for (int i = 0; i < filas; i++) {
+        for (int j = 0; j < columnas; j++) {
+            cout << mapa[i][j] << " ";
+        }
+        cout << endl;
+    }
 }
 
 int main() {
+    srand(time(0));
+
     int mapa[5][5] = {
-        {0, 0, 0, 0, 1},
-        {0, 1, 1, 0, 0},
-        {0, 1, 0, 0, 0},
-        {0, 0, 0, 1, 0},
-        {0, 0, 0, 1, 0}
+        {1, 1, 2, 1, 1},
+        {1, 3, 1, 1, 1},
+        {1, 1, 1, 2, 1},
+        {2, 1, 1, 2, 1},
+        {1, 2, 1, 1, 1}
     };
 
-    int inicioX = 0, inicioY = 0;
-    int objetivoX = 4, objetivoY = 4;
+    int inicioX, inicioY;
+    int objetivoX, objetivoY;
+    cout << "Inicio en x: "; cin >> inicioX;
+    cout << "Inicio en y: "; cin >> inicioY;
+    cout << "Objetivo en x: "; cin >> objetivoX;
+    cout << "Objetivo en y: "; cin >> objetivoY;
 
-    AStar(inicioX, inicioY, objetivoX, objetivoY, 5, 5, mapa);
+    while (true) {
+        simularTrafico(5, 5, mapa);
+        mostrarMapa(5, 5, mapa);
+        if (!AStar(inicioX, inicioY, objetivoX, objetivoY, 5, 5, mapa)) {
+            cout << "No se encontró un camino. Simulación continua.\n";
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
 
     return 0;
 }
